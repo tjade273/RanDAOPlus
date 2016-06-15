@@ -19,8 +19,7 @@ contract testProof{
   //mapping(bytes32 => mapping(address => ))
   Proof[] proofs;
 
-  function newChallenge(address _defender, address _challenger, uint _deposit, bytes32 seed, bytes32 result, uint difficulty){
-    Proof self = proofs[proofs.length++];
+  function newChallenge(Proof storage self, address _defender, address _challenger, uint _deposit, bytes32 seed, bytes32 result, uint difficulty){
     self.defender = _defender;
     self.challenger = _challenger;
 
@@ -35,8 +34,7 @@ contract testProof{
 
   }
 
-  function challenge(uint index, bool correct){
-    Proof self=proofs[index];
+  function challenge(Proof storage self, bool correct){
     if(self.currentVal == 0 || msg.sender != self.challenger) throw;
     if(correct){
       self.lIndex = (self.lIndex + self.rIndex)/2;
@@ -50,14 +48,14 @@ contract testProof{
     self.currentVal = 0;
   }
 
-  function respond(uint index, bytes32 hash){
-    Proof self=proofs[index];
+  function respond(Proof storage self, bytes32 hash){
+
     if(self.currentVal != 0 || msg.sender != self.defender) throw;
     self.currentVal = hash;
   }
 
-  function finalize(uint index) returns (bool confirmed){
-    Proof self=proofs[index];
+  function finalize(Proof storage self) returns (bool confirmed){
+
     if(self.rIndex - self.lIndex <= 3){
       bytes32 hash = self.lVal;
 
@@ -77,6 +75,7 @@ contract testProof{
     else throw;
   }
 
+/*
  function getProof(uint id) constant returns(uint,uint,bytes32,bytes32,bytes32){
      return (proofs[id].lIndex,proofs[id].rIndex,proofs[id].lVal,proofs[id].currentVal, proofs[id].rVal);
  }
@@ -84,5 +83,5 @@ contract testProof{
  function sha(bytes32 seed) constant returns(bytes32){
      return sha3(seed);
  }
-
+*/
 }
