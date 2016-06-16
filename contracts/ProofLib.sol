@@ -69,13 +69,15 @@ library ProofLib {
         } else throw;
     }
 
-    /*
-     function getProof(uint id) constant returns(uint,uint,bytes32,bytes32,bytes32){
-         return (proofs[id].lIndex,proofs[id].rIndex,proofs[id].lVal,proofs[id].currentVal, proofs[id].rVal);
+
+     function getProof(Proof storage self) constant returns(uint,uint,bytes32,bytes32,bytes32){
+         return (self.lIndex, self.rIndex, self.lVal, self.currentVal, self.rVal);
      }
 
-     function sha(bytes32 seed) constant returns(bytes32){
-         return sha3(seed);
+     function test() returns(uint){
+         return 5;
      }
-    */
+
+
+
 }

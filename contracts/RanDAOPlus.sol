@@ -1,7 +1,10 @@
-import "ProofLib.sol";
+import "./ProofLib.sol";
 
 contract RanDAOPlus {
     using ProofLib for ProofLib.Proof;
+
+    //EVENTS FOR DEBUGGING ONLY
+
 
 
     uint constant timeout = 10;
@@ -122,5 +125,17 @@ contract RanDAOPlus {
 
     function adjustDifficulty(uint blocksToVerify) {
         difficulty = difficultyTarget / blocksToVerify * difficulty; //TODO: Simulate network difficulty adjustment -- optimise algo
+    }
+
+    function sha(bytes32 seed) constant returns(bytes32){
+        return sha3(seed);
+    }
+
+    function getProof(uint blockNum, address defender, address challenger) constant returns (uint,uint,bytes32,bytes32,bytes32){
+      return pending[blockNum].proposals[defender].challenges[challenger].getProof();
+    }
+
+    function test() returns (uint){
+        return ProofLib.test();
     }
 }
