@@ -1,10 +1,10 @@
-contract testProof{
+library ProofLib{
 
   struct Proof{
     address defender;
     address challenger;
 
-    uint deposit;
+    //uint deposit;
 
     bytes32 lVal;
     bytes32 rVal;
@@ -16,10 +16,8 @@ contract testProof{
     //TODO: Implement non-participation resilliancy
   }
 
-  //mapping(bytes32 => mapping(address => ))
-  Proof[] proofs;
 
-  function newChallenge(Proof storage self, address _defender, address _challenger, uint _deposit, bytes32 seed, bytes32 result, uint difficulty){
+  function newChallenge(Proof storage self, address _defender, address _challenger, bytes32 seed, bytes32 result, uint difficulty){
     self.defender = _defender;
     self.challenger = _challenger;
 
