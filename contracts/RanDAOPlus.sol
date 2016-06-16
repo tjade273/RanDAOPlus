@@ -57,15 +57,15 @@ contract RanDAOPlus {
             pending[blockNum].timer = blockNum + timeout;
         }
 
-        if(pending[blockNum].submissionTimes[proposal] == 0){
-          pending[blockNum].submissionTimes[proposal] = block.number;
+        if (pending[blockNum].submissionTimes[proposal] == 0) {
+            pending[blockNum].submissionTimes[proposal] = block.number;
         }
     }
 
     function newChallenge(uint blockNum, address defender) {
         ProofLib.Proof proof = pending[blockNum].proposals[defender].challenges[msg.sender];
 
-        proof.newChallenge(defender, msg.sender, block.blockhash(blockNum), pending[blockNum].proposals[defender].proposal, pending[blockNum].difficulty);
+        proof.newChallenge(defender, msg.sender, block.blockhash(blockNum), pending[blockNum].proposals[defender].proposal, pending[blockNum].difficulty, proofRoundTime);
         pending[blockNum].depositTotals[pending[blockNum].proposals[defender].proposal] -= pending[blockNum].proposals[defender].deposit;
     }
 
@@ -78,39 +78,37 @@ contract RanDAOPlus {
     }
 
     function finalize(uint blockNum, address defender, address challenger) {
-      ProofLib.Proof proof = pending[blockNum].proposals[defender].challenges[challenger];
+        ProofLib.Proof proof = pending[blockNum].proposals[defender].challenges[challenger];
         bool challengeSuccessful = proof.finalize();
         distributeRewards(proof, challengeSuccessful, blockNum);
-        delete proof;
+        delete pending[blockNum].proposals[defender].challenges[challenger];
     }
 
-    function distributeRewards(ProfLib.Proof proof, bool challengeSuccessfu, uint blockNum) private { //Make sure loopback attacks not possible
-      if (challengeSuccessful) {
-          proof.challenger.send(pending[blockNum].proposals[proof.defender].deposit * 2);
-          pending[blockNum].proposals[proof.defender].disproven = true;
-      } else {
-          proof.defender.send(pending[blockNum].proposals[proof.defender].deposit);
-      }
+    function distributeRewards(ProofLib.Proof proof, bool challengeSuccessful, uint blockNum) private { //Make sure loopback attacks not possible
+        if (challengeSuccessful) {
+            proof.challenger.send(pending[blockNum].proposals[proof.defender].deposit * 2);
+            pending[blockNum].proposals[proof.defender].disproven = true;
+        } else {
+            proof.defender.send(pending[blockNum].proposals[proof.defender].deposit);
+        }
     }
 
-    function challengeTimeout(uint blockNum, bool isDefender, address opponent){
-      ProofLib.Proof proof;
+    function challengeTimeout(uint blockNum, bool isDefender, address opponent) {
+        ProofLib.Proof proof;
 
-      if(isDefender){
-        proof = pending[blockNum].proposals[msg.sender].challenges[oppnent];
-      }
-      else{
-        proof = pending[blockNum].proposals[opponent].challenges[msg.sender];
-      }
+        if (isDefender) {
+            proof = pending[blockNum].proposals[msg.sender].challenges[opponent];
+        } else {
+            proof = pending[blockNum].proposals[opponent].challenges[msg.sender];
+        }
 
-      if(proof.roundTime + proof.lastRound < block.number){
-        if(proof.currentVal == 0){
-          distributeRewards(proof, true, blockNum);
+        if (proof.roundTime + proof.lastRound < block.number) {
+            if (proof.currentVal == 0) {
+                distributeRewards(proof, true, blockNum);
+            } else {
+                distributeRewards(proof, false, blockNum);
+            }
         }
-        else{
-          distributeRewards(proof, false, blockNum);
-        }
-      }
     }
 
     function finalizeNumber(uint blockNum) {
@@ -122,7 +120,7 @@ contract RanDAOPlus {
         }
     }
 
-    function adjustDifficulty(uint blocksToVerify){
-      difficulty = difficultyTarget/blocksToVerify*difficulty;  //TODO: Simulate network difficulty adjustment -- optimise algo
+    function adjustDifficulty(uint blocksToVerify) {
+        difficulty = difficultyTarget / blocksToVerify * difficulty; //TODO: Simulate network difficulty adjustment -- optimise algo
     }
 }
