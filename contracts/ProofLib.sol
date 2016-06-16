@@ -21,8 +21,6 @@ library ProofLib{
     self.defender = _defender;
     self.challenger = _challenger;
 
-    self.deposit = _deposit;
-
     self.lVal = seed;
     self.rVal = result;
 
@@ -52,7 +50,7 @@ library ProofLib{
     self.currentVal = hash;
   }
 
-  function finalize(Proof storage self) returns (bool confirmed){
+  function finalize(Proof storage self) returns (bool confirmed){ //returns true if challenge successfully disproves proposal
 
     if(self.rIndex - self.lIndex <= 3){
       bytes32 hash = self.lVal;
@@ -62,12 +60,10 @@ library ProofLib{
       }
 
       if(hash == self.rVal){
-        self.defender.send(self.deposit*2);
-        return true;
+        return false;
       }
       else{
-        self.challenger.send(self.deposit*2);
-        return false;
+        return true;
       }
     }
     else throw;

@@ -1,8 +1,9 @@
-import "proofLib.sol";
-
-using ProofLib for ProofLib.Proof;
+import "ProofLib.sol";
 
 contract RanDAOPlus{
+  using ProofLib for ProofLib.Proof;
+
+
   uint constant timeout = 10;
 
   mapping(uint => bytes32) finalizedRandomNumbers; //Maps block numbers to random numbers: One random number is generated per block
@@ -15,6 +16,7 @@ contract RanDAOPlus{
     uint deposit;
     address depositor;
     mapping(address => ProofLib.Proof) challenges;
+    bool disproven;
   }
 
   struct PendingBlock {
@@ -28,14 +30,14 @@ contract RanDAOPlus{
     uint timer;
   }
 
-  mapping(uint => pendingBlock) pending;
+  mapping(uint => PendingBlock) pending;
 
   function RanDAOPlus(address proof){
     proofLib = ProofLib(proof);
   }
 
   function submitProposal(uint block, bytes32 proposal){
-    if(finalizedRandomNumbers[uint] != 0 || pending[block].blockNumber == 0) throw;
+    if(finalizedRandomNumbers[block] != 0 || pending[block].blockNumber == 0) throw;
 
     Proposal prop = pending[block].proposals[msg.sender];
     prop.block = block;
@@ -47,23 +49,42 @@ contract RanDAOPlus{
 
     if(pending[block].depositTotals[proposal] > pending[block].depositTotals[pending[block].topProposal] && pending[block].depositTotals[proposal] > pending[block].depositLimit){
       pending[block].topProposal = proposal;
-      pending[block].timer = block.timestamp + timeout;
+      pending[block].timer = block + timeout;
     }
   }
 
-  function challenge(uint block, address defender){
-    ProofLib.Proof proof = pending[block].proposals[defender].challenges[msg.sender];
+function newChallenge(uint blockNum, address defender){
+   ProofLib.Proof proof = pending[blockNum].proposals[defender].challenges[msg.sender];
 
-    proof.newChallenge(defender,msg.sender, block.hash(block), pending[block].proposals[defender].proposal, pending[block].difficulty);
-    pending[block].depositTotals[proposal] -= pending[block].proposals[defender].deposit;
+   proof.newChallenge(defender,msg.sender, block.blockhash(blockNum), pending[blockNum].proposals[defender].proposal, pending[blockNum].difficulty);
+   pending[blockNum].depositTotals[pending[blockNum].proposals[defender].proposal] -= pending[blockNum].proposals[defender].deposit;
+ }
+
+  function challenge(uint block, address defender, bool correct){
+    pending[block].proposals[defender].challenges[msg.sender].challenge(correct);
   }
 
-  function finalizeNumber(uint block){
-    if(pending[block].topProposal.proposal != 0 && pending[block].timer <= block.number){
-      finalizedRandomNumbers[block] = pending[block].topProposal;
-      delete pending[block]
+  function respond(uint block, address challenger, bytes32 response){
+    pending[block].proposals[msg.sender].challenges[challenger].respond(response);
+  }
+
+  function finalize(uint block, address defender, address challenger){
+    bool challengeSuccessful = pending[block].proposals[defender].challenges[challenger].finalize();
+    delete pending[block].proposals[defender].challenges[challenger];
+
+    if(challengeSuccessful){
+      challenger.send(pending[block].proposals[defender].deposit * 2);
+      pending[block].proposals[defender].disproven = true;
+    }
+    else{
+      defender.send(pending[block].proposals[defender].deposit);
     }
   }
 
-
+  function finalizeNumber(uint blockNum){
+    if(pending[blockNum].topProposal != 0 && pending[blockNum].timer <= block.number){
+      finalizedRandomNumbers[blockNum] = pending[blockNum].topProposal;
+      delete pending[blockNum];
+    }
+  }
 }
