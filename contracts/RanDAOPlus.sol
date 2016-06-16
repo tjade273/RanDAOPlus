@@ -1,11 +1,13 @@
 import "ProofLib.sol";
 
 contract RanDAOPlus {
-    using ProofLib
-    for ProofLib.Proof;
+    using ProofLib for ProofLib.Proof;
 
 
     uint constant timeout = 10;
+    uint constant difficultyTarget = 6;
+
+    uint difficulty;
 
     mapping(uint => bytes32) finalizedRandomNumbers; //Maps block numbers to random numbers: One random number is generated per block
 
@@ -26,6 +28,7 @@ contract RanDAOPlus {
         uint depositLimit;
         mapping(bytes32 => uint) depositTotals;
         mapping(address => Proposal) proposals;
+        mapping(bytes32 => uint) submissionTimes;
 
         bytes32 topProposal;
         uint timer;
@@ -37,20 +40,24 @@ contract RanDAOPlus {
         proofLib = ProofLib(proof);
     }
 
-    function submitProposal(uint block, bytes32 proposal) {
-        if (finalizedRandomNumbers[block] != 0 || pending[block].blockNumber == 0) throw;
+    function submitProposal(uint blockNum, bytes32 proposal) {
+        if (finalizedRandomNumbers[blockNum] != 0 || pending[blockNum].blockNumber == 0) throw;
 
-        Proposal prop = pending[block].proposals[msg.sender];
-        prop.block = block;
+        Proposal prop = pending[blockNum].proposals[msg.sender];
+        prop.block = blockNum;
         prop.proposal = proposal;
         prop.deposit = msg.value;
         prop.depositor = msg.sender;
 
-        pending[block].depositTotals[proposal] += msg.value;
+        pending[blockNum].depositTotals[proposal] += msg.value;
 
-        if (pending[block].depositTotals[proposal] > pending[block].depositTotals[pending[block].topProposal] && pending[block].depositTotals[proposal] > pending[block].depositLimit) {
-            pending[block].topProposal = proposal;
-            pending[block].timer = block + timeout;
+        if (pending[blockNum].depositTotals[proposal] > pending[blockNum].depositTotals[pending[blockNum].topProposal] && pending[blockNum].depositTotals[proposal] > pending[blockNum].depositLimit) {
+            pending[blockNum].topProposal = proposal;
+            pending[blockNum].timer = blockNum + timeout;
+        }
+
+        if(pending[blockNum].submissionTimes[proposal] == 0){
+          pending[blockNum].submissionTimes[proposal] = block.number;
         }
     }
 
@@ -84,7 +91,13 @@ contract RanDAOPlus {
     function finalizeNumber(uint blockNum) {
         if (pending[blockNum].topProposal != 0 && pending[blockNum].timer <= block.number) {
             finalizedRandomNumbers[blockNum] = pending[blockNum].topProposal;
+            adjustDifficulty(blockNum - pending[blockNum].submissionTimes[pending[blockNum].topProposal]);
             delete pending[blockNum];
+
         }
+    }
+
+    function adjustDifficulty(uint blocksToVerify){
+      difficulty = difficultyTarget/blocksToVerify*difficulty;  //TODO: Simulate network difficulty adjustment -- optimise algo
     }
 }
