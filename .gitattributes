@@ -1,0 +1,2 @@
+environments/* linguist-vendored
+*.sol linguist-language=JavaScript
