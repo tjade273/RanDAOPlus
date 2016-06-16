@@ -6,6 +6,7 @@ contract RanDAOPlus {
 
     uint constant timeout = 10;
     uint constant difficultyTarget = 6;
+    uint constant proofRoundTime = 5;
 
     uint difficulty;
 
@@ -76,16 +77,40 @@ contract RanDAOPlus {
         pending[block].proposals[msg.sender].challenges[challenger].respond(response);
     }
 
-    function finalize(uint block, address defender, address challenger) {
-        bool challengeSuccessful = pending[block].proposals[defender].challenges[challenger].finalize();
-        delete pending[block].proposals[defender].challenges[challenger];
+    function finalize(uint blockNum, address defender, address challenger) {
+      ProofLib.Proof proof = pending[blockNum].proposals[defender].challenges[challenger];
+        bool challengeSuccessful = proof.finalize();
+        distributeRewards(proof, challengeSuccessful, blockNum);
+        delete proof;
+    }
 
-        if (challengeSuccessful) {
-            challenger.send(pending[block].proposals[defender].deposit * 2);
-            pending[block].proposals[defender].disproven = true;
-        } else {
-            defender.send(pending[block].proposals[defender].deposit);
+    function distributeRewards(ProfLib.Proof proof, bool challengeSuccessfu, uint blockNum) private { //Make sure loopback attacks not possible
+      if (challengeSuccessful) {
+          proof.challenger.send(pending[blockNum].proposals[proof.defender].deposit * 2);
+          pending[blockNum].proposals[proof.defender].disproven = true;
+      } else {
+          proof.defender.send(pending[blockNum].proposals[proof.defender].deposit);
+      }
+    }
+
+    function challengeTimeout(uint blockNum, bool isDefender, address opponent){
+      ProofLib.Proof proof;
+
+      if(isDefender){
+        proof = pending[blockNum].proposals[msg.sender].challenges[oppnent];
+      }
+      else{
+        proof = pending[blockNum].proposals[opponent].challenges[msg.sender];
+      }
+
+      if(proof.roundTime + proof.lastRound < block.number){
+        if(proof.currentVal == 0){
+          distributeRewards(proof, true, blockNum);
         }
+        else{
+          distributeRewards(proof, false, blockNum);
+        }
+      }
     }
 
     function finalizeNumber(uint blockNum) {

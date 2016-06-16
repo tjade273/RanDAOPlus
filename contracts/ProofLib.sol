@@ -4,12 +4,13 @@ library ProofLib {
         address defender;
         address challenger;
 
-        //uint deposit;
-
         bytes32 lVal;
         bytes32 rVal;
         uint lIndex;
         uint rIndex;
+
+        uint roundTime;
+        uint lastRound;
 
         bytes32 currentVal;
 
@@ -17,7 +18,7 @@ library ProofLib {
     }
 
 
-    function newChallenge(Proof storage self, address _defender, address _challenger, bytes32 seed, bytes32 result, uint difficulty) {
+    function newChallenge(Proof storage self, address _defender, address _challenger, bytes32 seed, bytes32 result, uint difficulty, uint time) {
         self.defender = _defender;
         self.challenger = _challenger;
 
@@ -26,6 +27,9 @@ library ProofLib {
 
         self.lIndex = 0;
         self.rIndex = difficulty;
+
+        self.roundTime = time;
+        self.lastRound = block.number;
 
 
     }
@@ -44,7 +48,6 @@ library ProofLib {
     }
 
     function respond(Proof storage self, bytes32 hash) {
-
         if (self.currentVal != 0 || msg.sender != self.defender) throw;
         self.currentVal = hash;
     }
