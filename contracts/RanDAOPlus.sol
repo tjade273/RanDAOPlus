@@ -86,8 +86,10 @@ contract RanDAOPlus {
 
     function distributeRewards(ProofLib.Proof proof, bool challengeSuccessful, uint blockNum) private { //Make sure loopback attacks not possible
         if (challengeSuccessful) {
-            proof.challenger.send(pending[blockNum].proposals[proof.defender].deposit * 2);
-            pending[blockNum].proposals[proof.defender].disproven = true;
+            //Fix vulnerability with send() method
+            if(proof.challenger.send(pending[blockNum].proposals[proof.defender].deposit * 2))){
+                pending[blockNum].proposals[proof.defender].disproven = true;
+            }
         } else {
             proof.defender.send(pending[blockNum].proposals[proof.defender].deposit);
         }
