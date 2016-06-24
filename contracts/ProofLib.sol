@@ -74,10 +74,6 @@ library ProofLib {
          return (self.lIndex, self.rIndex, self.lVal, self.currentVal, self.rVal);
      }
 
-     function test() returns(uint){
-         return 5;
-     }
-
 
 
 }

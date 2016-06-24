@@ -97,12 +97,12 @@ contract RanDAOPlus {
     }
 
     function challengeTimeout(uint blockNum, bool isDefender, address opponent) {
-        ProofLib.Proof proof;
+
 
         if (isDefender) {
-            proof = pending[blockNum].proposals[msg.sender].challenges[opponent];
+          ProofLib.Proof proof = pending[blockNum].proposals[msg.sender].challenges[opponent];
         } else {
-            proof = pending[blockNum].proposals[opponent].challenges[msg.sender];
+          proof = pending[blockNum].proposals[opponent].challenges[msg.sender];
         }
 
         if (proof.roundTime + proof.lastRound < block.number) {
@@ -135,7 +135,5 @@ contract RanDAOPlus {
       return pending[blockNum].proposals[defender].challenges[challenger].getProof();
     }
 
-    function test() returns (uint){
-        return ProofLib.test();
-    }
+
 }
